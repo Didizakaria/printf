@@ -1,12 +1,83 @@
-#include <stdarg.h>
-#include <unistd.h>
+#include "main.h"
 
 /**
- * _putchar - writes the character c to stdout
- * @c: The character to print
+ * _printf - prints a formatted string
+ * @format: format string
  *
- * Return: On success 1.
- * On error, -1 is returned, and errno is set appropriately.
+ * Return: number of characters printed
+ */
+int _printf(const char *format, ...)
+{
+	va_list args;
+	int count = 0;
+
+	if (format == NULL)
+		return (-1);
+
+	va_start(args, format);
+	count = parse_format(format, args);
+	va_end(args);
+
+	return (count);
+}
+
+/**
+ * parse_format - parses the format string and prints arguments
+ * @format: format string
+ * @args: argument list
+ *
+ * Return: number of characters printed
+ */
+int parse_format(const char *format, va_list args)
+{
+	int count = 0;
+	const char *ptr = format;
+
+	while (*ptr != '\0')
+	{
+		if (*ptr != '%')
+		{
+			_putchar(*ptr);
+			count++;
+		}
+		else
+		{
+			ptr++;
+			if (*ptr == '\0')
+				return (-1);
+			count += print_arg(*ptr, args);
+		}
+		ptr++;
+	}
+
+	return (count);
+}
+
+/**
+ * print_arg - prints an argument based on the format specifier
+ * @spec: format specifier
+ * @args: argument list
+ *
+ * Return: number of characters printed
+ */
+int print_arg(char spec, va_list args)
+{
+	switch (spec)
+	{
+	case 'c':
+		return (_putchar(va_arg(args, int)));
+	case 's':
+		return (_puts(va_arg(args, char *)));
+	default:
+		return (_putchar('%') + _putchar(spec));
+	}
+}
+
+/**
+ * _putchar - writes a character to stdout
+ * @c: character to write
+ *
+ * Return: on success, 1. On error, -1.
  */
 int _putchar(char c)
 {
@@ -14,54 +85,27 @@ int _putchar(char c)
 }
 
 /**
- * _printf - produces output according to a format
- * @format: format string containing the characters and the format specifiers
+ * _puts - writes a string to stdout
+ * @str: string to write
  *
- * Return: the number of characters printed (excluding the null byte used to end output to strings)
+ * Return: number of characters written
  */
-int _printf(const char *format, ...)
+int _puts(char *str)
 {
-	va_list args;
-	int printed_chars = 0;
-	char current_char;
+	int len = 0;
 
-	va_start(args, format);
-
-	while (*format != '\0')
+	if (str == NULL)
 	{
-		current_char = *format;
-
-		if (current_char == '%')
-		{
-			format++;
-			switch (*format)
-			{
-				case 'c':
-					_putchar(va_arg(args, int));
-					printed_chars++;
-					break;
-				case 's':
-					printed_chars += write(1, va_arg(args, char *), 0);
-					break;
-				case '%':
-					_putchar('%');
-					printed_chars++;
-					break;
-				default:
-					_putchar('%');
-					_putchar(*format);
-					printed_chars += 2;
-					break;
-			}
-		}
-		else
-		{
-			_putchar(current_char);
-			printed_chars++;
-		}
-		format++;
+		str = "(null)";
+		len = 6;
 	}
-	va_end(args);
 
-	return (printed_chars);
+	while (*str != '\0')
+	{
+		_putchar(*str);
+		str++;
+		len++;
+	}
+
+	return (len);
 }
