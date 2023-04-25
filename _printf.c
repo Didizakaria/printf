@@ -1,111 +1,69 @@
 #include "main.h"
 
+void write_buffer(char buffer[], int *buff_ind);
+
 /**
- * _printf - prints a formatted string
+ * _printf - custom printf function
  * @format: format string
- *
  * Return: number of characters printed
  */
+
 int _printf(const char *format, ...)
 {
 	va_list args;
-	int count = 0;
+	int i, printed_chars = 0, buffer_index = 0;
+	int flags, widths, precisions, sizes;
+
+	char buffer[BUFFER_SIZE];
 
 	if (format == NULL)
 		return (-1);
 
 	va_start(args, format);
-	count = parse_format(format, args);
-	va_end(args);
 
-	return (count);
-}
-
-/**
- * parse_format - parses the format string and prints arguments
- * @format: format string
- * @args: argument list
- *
- * Return: number of characters printed
- */
-int parse_format(const char *format, va_list args)
-{
-	int count = 0;
-	const char *ptr = format;
-
-	while (*ptr != '\0')
+	for (i = 0; format && format[i] != '\0'; i++)
 	{
-		if (*ptr != '%')
+		if (format[i] != '%')
 		{
-			_putchar(*ptr);
-			count++;
+			buffer[buffer_index++] = format[i];
+
+			if (buffer_index == BUFFER_SIZE)
+				write_buffer(buffer, &buffer_index);
+
+			printed_chars++;
 		}
 		else
 		{
-			ptr++;
-			if (*ptr == '\0')
-				return (-1);
-			count += print_arg(*ptr, args);
+			write_buffer(buffer, &buffer_index);
+
+			flags = get_flags(format, &i);
+			widths = get_width(format, &i, args);
+			precisions = get_precision(format, &i, args);
+			sizes = get_size(format, &i);
+			i++;
+
+			printed_chars += handle_print(format, &i, args, buffer,
+							flags, widths, precisions, sizes);
 		}
-		ptr++;
 	}
 
-	return (count);
+	write_buffer(buffer, &buffer_index);
+	va_end(args);
+
+	return (printed_chars);
 }
 
 /**
- * print_arg - prints an argument based on the format specifier
- * @spec: format specifier
- * @args: argument list
- *
- * Return: number of characters printed
+ * write_buffer - write to buffer
+ * @buffer: array of characters
+ * @buffer_index: Index at which to add the next character
  */
-int print_arg(char spec, va_list args)
+
+void write_buffer(char buffer[], int *buffer_index)
 {
-	switch (spec)
+	if (*buffer_index > 0)
 	{
-	case 'c':
-		return (_putchar(va_arg(args, int)));
-	case 's':
-		return (_puts(va_arg(args, char *)));
-	default:
-		return (_putchar('%') + _putchar(spec));
+		write(1, &buffer[0], *buffer_index);
 	}
-}
-
-/**
- * _putchar - writes a character to stdout
- * @c: character to write
- *
- * Return: on success, 1. On error, -1.
- */
-int _putchar(char c)
-{
-	return (write(1, &c, 1));
-}
-
-/**
- * _puts - writes a string to stdout
- * @str: string to write
- *
- * Return: number of characters written
- */
-int _puts(char *str)
-{
-	int len = 0;
-
-	if (str == NULL)
-	{
-		str = "(null)";
-		len = 6;
-	}
-
-	while (*str != '\0')
-	{
-		_putchar(*str);
-		str++;
-		len++;
-	}
-
-	return (len);
+	*buffer_index = 0;
 }
