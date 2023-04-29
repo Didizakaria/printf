@@ -1,49 +1,110 @@
 #include "main.h"
+#include <stdarg.h>
+#include <unistd.h>
 
 /**
- * _printf - prints anything
- * @format: the format string
+ * _putchar - writes the character c to stdout
+ * @c: The character to print
  *
- * Return: number of bytes printed
+ * Return: On success 1.
+ * On error, -1 is returned, and errno is set appropriately.
+ */
+int _putchar(char c)
+{
+	return (write(1, &c, 1));
+}
+
+/**
+ * _printf - function that produces output according to a format
+ * @format: pointer to character string
+ *
+ * Return: number of characters printed
  */
 int _printf(const char *format, ...)
 {
-	int sum = 0;
-	va_list ap;
-	char *p, *start;
-	params_t params = PARAMS_INIT;
+	int i, j, count = 0;
+	va_list args;
+	print_func_t funcs[] = {
+		{'c', print_char},
+		{'s', print_string},
+		{'%', print_percent},
+		{'\0', NULL}
+	};
 
-	va_start(ap, format);
+	va_start(args, format);
 
-	if (!format || (format[0] == '%' && !format[1]))
-		return (-1);
-	if (format[0] == '%' && format[1] == ' ' && !format[2])
-		return (-1);
-	for (p = (char *)format; *p; p++)
+	for (i = 0; format && format[i]; i++)
 	{
-		init_params(&params, ap);
-		if (*p != '%')
+		if (format[i] == '%')
 		{
-			sum += _putchar(*p);
-			continue;
+			for (j = 0; funcs[j].spec; j++)
+			{
+				if (format[i + 1] == funcs[j].spec)
+				{
+					count += funcs[j].f(args);
+					break;
+				}
+			}
+			if (!funcs[j].spec)
+			{
+				_putchar(format[i]);
+				count++;
+			}
+			i++;
 		}
-		start = p;
-		p++;
-		while (get_flag(p, &params)) /* while char at p is flag char */
-		{
-			p++; /* next char */
-		}
-		p = get_width(p, &params, ap);
-		p = get_precision(p, &params, ap);
-		if (get_modifier(p, &params))
-			p++;
-		if (!get_specifier(p))
-			sum += print_from_to(start, p,
-				params.l_modifier || params.h_modifier ? p - 1 : 0);
 		else
-			sum += get_print_func(p, ap, &params);
+		{
+			_putchar(format[i]);
+			count++;
+		}
 	}
-	_putchar(BUF_FLUSH);
-	va_end(ap);
-	return (sum);
+
+	va_end(args);
+	return (count);
+}
+
+/**
+ * print_char - function that prints a character
+ * @args: arguments list
+ *
+ * Return: number of characters printed
+ */
+int print_char(va_list args)
+{
+	char c = va_arg(args, int);
+	_putchar(c);
+	return (1);
+}
+
+/**
+ * print_string - function that prints a string
+ * @args: arguments list
+ *
+ * Return: number of characters printed
+ */
+int print_string(va_list args)
+{
+	char *str = va_arg(args, char *);
+	int i;
+
+	if (!str)
+		str = "(null)";
+
+	for (i = 0; str[i]; i++)
+		_putchar(str[i]);
+
+	return (i);
+}
+
+/**
+ * print_percent - function that prints a percent symbol
+ * @args: arguments list
+ *
+ * Return: number of characters printed
+ */
+int print_percent(va_list args)
+{
+	(void)args;
+	_putchar('%');
+	return (1);
 }
